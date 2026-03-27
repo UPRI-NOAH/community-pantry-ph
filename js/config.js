@@ -10,8 +10,8 @@
 
 const CONFIG = Object.freeze({
   // --- Supabase credentials (safe to expose — protected by Row Level Security) ---
-  SUPABASE_URL: 'https://twdrdmxpapucraosgayf.supabase.co',          // e.g. https://abcdefgh.supabase.co
-  SUPABASE_ANON_KEY: 'sb_publishable_g1rLoiRa4GzhQfG-nidepA_h_mhYtGG', // starts with "eyJh..."
+  SUPABASE_URL: 'YOUR_SUPABASE_URL',
+  SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
 
   // --- Map defaults ---
   DEFAULT_CENTER: [12.8797, 121.7740],  // [lat, lng] center on first load
@@ -33,5 +33,5 @@ const CONFIG = Object.freeze({
   // --- Manager dashboard (data.html) ---
   // This is client-side only — not a security boundary, just a lightweight gate.
   // Real data protection is handled by Supabase RLS.
-  MANAGER_PASSWORD: 'weloveosm123',
+  MANAGER_PASSWORD: 'YOUR_MANAGER_PASSWORD',
 });
