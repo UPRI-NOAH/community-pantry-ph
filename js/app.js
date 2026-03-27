@@ -349,7 +349,7 @@ function handlePhotoChange(e) {
   if (!file) return;
 
   if (file.size > CONFIG.PHOTO_MAX_BYTES) {
-    showFormError('Photo is too large (max 3 MB). Please choose a smaller image.');
+    showFormError(`Photo is too large (max ${CONFIG.PHOTO_MAX_BYTES / 1024 / 1024} MB). Please choose a smaller image.`);
     e.target.value = '';
     return;
   }
