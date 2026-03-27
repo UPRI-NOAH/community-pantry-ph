@@ -8,6 +8,7 @@
 // "db" holds the Supabase client instance.
 // window.supabase is the CDN global (the library itself).
 let db, map, markerLayer;
+const markerIndex = new Map(); // pantry id → marker, for real-time updates
 let pendingLat = null, pendingLng = null;
 let pendingMarker = null;
 let pendingPhotoBlob = null;
@@ -99,6 +100,7 @@ function addPantryMarker(pantry) {
     className: 'pantry-popup',
   });
   markerLayer.addLayer(marker);
+  markerIndex.set(pantry.id, marker);
 }
 
 function buildPopup(pantry) {
@@ -179,16 +181,25 @@ function buildPopup(pantry) {
 function subscribeRealtime() {
   db
     .channel('pantries-realtime')
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'pantries' },
-      (payload) => {
-        // Only add to map if approved (or auto-approve is on)
-        if (payload.new && (payload.new.approved || CONFIG.AUTO_APPROVE)) {
-          addPantryMarker(payload.new);
-        }
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pantries' }, (payload) => {
+      if (payload.new) addPantryMarker(payload.new);
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pantries' }, (payload) => {
+      // Re-draw marker so colour updates (grey → green) without page refresh
+      if (!payload.new) return;
+      const existing = markerIndex.get(payload.new.id);
+      if (existing) markerLayer.removeLayer(existing);
+      addPantryMarker(payload.new);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pantries' }, (payload) => {
+      // Remove denied marker immediately
+      if (!payload.old) return;
+      const existing = markerIndex.get(payload.old.id);
+      if (existing) {
+        markerLayer.removeLayer(existing);
+        markerIndex.delete(payload.old.id);
       }
-    )
+    })
     .subscribe();
 }
 
