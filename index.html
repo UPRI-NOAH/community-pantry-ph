@@ -133,6 +133,7 @@
               <button type="button" id="btn-clear-photo" aria-label="Remove photo">✕</button>
             </div>
           </div>
+          <p class="field-hint">📸 Please use an original photo you took on-site. Do not upload photos from the internet or social media.</p>
         </div>
 
         <!-- Error message -->
@@ -149,6 +150,26 @@
         </div>
 
       </form>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       CONSENT MODAL
+  ============================================================ -->
+  <div id="consent-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="consent-heading">
+    <div id="consent-card">
+      <div id="consent-icon">🧺</div>
+      <h2 id="consent-heading">Before You Add a Pantry</h2>
+      <ul id="consent-list">
+        <li>✅ I have the <strong>consent of the pantry owner</strong> to submit this information.</li>
+        <li>✅ The photo I will upload is <strong>my own original photo</strong> taken on-site — not copied from the internet or social media.</li>
+        <li>✅ The contact details I am submitting are <strong>accurate</strong> and may be viewed by the public.</li>
+        <li>✅ I understand this data may be used to update <strong>OpenStreetMap</strong>.</li>
+      </ul>
+      <div id="consent-actions">
+        <button id="btn-consent-agree" class="btn-primary btn-full">I Understand & Agree</button>
+        <button id="btn-consent-cancel" class="btn-ghost btn-full">Cancel</button>
+      </div>
     </div>
   </div>
 

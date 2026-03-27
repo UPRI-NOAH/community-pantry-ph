@@ -208,8 +208,13 @@ function subscribeRealtime() {
 // ================================================================
 
 function setupUI() {
-  // FAB
-  document.getElementById('btn-add').addEventListener('click', openPanel);
+  // FAB — show consent modal first
+  document.getElementById('btn-add').addEventListener('click', openConsentModal);
+  document.getElementById('btn-consent-agree').addEventListener('click', () => {
+    closeConsentModal();
+    openPanel();
+  });
+  document.getElementById('btn-consent-cancel').addEventListener('click', closeConsentModal);
 
   // Panel close buttons
   document.getElementById('btn-close-panel').addEventListener('click', closePanel);
@@ -232,6 +237,14 @@ function setupUI() {
 }
 
 // ---- Panel open / close ----
+
+function openConsentModal() {
+  document.getElementById('consent-modal').classList.remove('hidden');
+}
+
+function closeConsentModal() {
+  document.getElementById('consent-modal').classList.add('hidden');
+}
 
 function openPanel() {
   const panel = document.getElementById('panel');
