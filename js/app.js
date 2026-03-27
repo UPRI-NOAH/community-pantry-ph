@@ -65,7 +65,7 @@ function initMap() {
     maxZoom: 19,
   }).addTo(map);
 
-  markerLayer = L.layerGroup().addTo(map);
+  markerLayer = L.markerClusterGroup({ maxClusterRadius: 40 }).addTo(map);
 }
 
 async function loadPantries() {
