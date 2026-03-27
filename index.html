@@ -30,8 +30,14 @@
       <span aria-hidden="true">🧺</span>
       <span>Community Pantry Map</span>
     </div>
-    <a href="data.html" id="mgr-link" title="Manager dashboard">⚙️</a>
+    <button id="btn-search-toggle" aria-label="Search pantries" title="Search">🔍</button>
   </header>
+
+  <!-- Search bar (hidden until toggle) -->
+  <div id="search-bar" class="hidden">
+    <input id="search-input" type="search" placeholder="Search pantry name or address…" autocomplete="off">
+    <div id="search-results" class="hidden" role="listbox"></div>
+  </div>
 
   <!-- ============================================================
        FAB — Add Pantry button
@@ -116,6 +122,14 @@
           <label class="field-label" for="f-url">Website or Facebook</label>
           <input id="f-url" name="url" type="text"
                  placeholder="https://facebook.com/yourpage" maxlength="300">
+        </div>
+
+        <!-- Address -->
+        <div class="field">
+          <label class="field-label" for="f-address">Address</label>
+          <input id="f-address" name="address" type="text"
+                 placeholder="e.g. 123 Rizal St, Barangay Poblacion"
+                 maxlength="200">
         </div>
 
         <!-- Photo -->

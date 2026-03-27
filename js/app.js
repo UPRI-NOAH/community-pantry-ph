@@ -9,6 +9,7 @@
 // window.supabase is the CDN global (the library itself).
 let db, map, markerLayer;
 const markerIndex = new Map(); // pantry id → marker, for real-time updates
+const pantryIndex = new Map(); // pantry id → data, for search
 let pendingLat = null, pendingLng = null;
 let pendingMarker = null;
 let pendingPhotoBlob = null;
@@ -101,6 +102,7 @@ function addPantryMarker(pantry) {
   });
   markerLayer.addLayer(marker);
   markerIndex.set(pantry.id, marker);
+  pantryIndex.set(pantry.id, pantry);
 }
 
 function buildPopup(pantry) {
@@ -138,6 +140,13 @@ function buildPopup(pantry) {
     a.textContent = pantry.contact_phone;
     p.appendChild(document.createTextNode('📞 '));
     p.appendChild(a);
+    body.appendChild(p);
+  }
+
+  if (pantry.address) {
+    const p = document.createElement('p');
+    p.className = 'popup-row';
+    p.textContent = '📍 ' + pantry.address;
     body.appendChild(p);
   }
 
@@ -231,6 +240,9 @@ function setupUI() {
 
   // Form submit
   document.getElementById('pantry-form').addEventListener('submit', handleSubmit);
+
+  // Search
+  setupSearch();
 
   // Swipe-to-dismiss (mobile bottom sheet)
   setupSwipeToDismiss();
@@ -529,6 +541,7 @@ async function handleSubmit(e) {
       contact_name:  form.elements['contact_name'].value.trim() || null,
       contact_phone: form.elements['contact_phone'].value.trim() || null,
       url:           form.elements['url'].value.trim() || null,
+      address:       form.elements['address'].value.trim() || null,
       photo_path:    photoPath,
       photo_url:     photoUrl,
       approved:      CONFIG.AUTO_APPROVE,
@@ -558,6 +571,73 @@ async function handleSubmit(e) {
     btn.disabled = false;
     btn.textContent = 'Submit Pantry';
   }
+}
+
+// ================================================================
+//  SEARCH
+// ================================================================
+
+function setupSearch() {
+  const toggle  = document.getElementById('btn-search-toggle');
+  const bar     = document.getElementById('search-bar');
+  const input   = document.getElementById('search-input');
+  const results = document.getElementById('search-results');
+
+  toggle.addEventListener('click', () => {
+    const isHidden = bar.classList.toggle('hidden');
+    if (!isHidden) {
+      input.focus();
+    } else {
+      input.value = '';
+      results.classList.add('hidden');
+    }
+  });
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { results.classList.add('hidden'); return; }
+
+    const matches = [];
+    pantryIndex.forEach((p) => {
+      const haystack = [p.name, p.address, p.contact_name]
+        .filter(Boolean).join(' ').toLowerCase();
+      if (haystack.includes(q)) matches.push(p);
+    });
+
+    results.innerHTML = '';
+    if (matches.length === 0) {
+      results.innerHTML = '<p class="search-no-results">No pantries found.</p>';
+    } else {
+      matches.slice(0, 8).forEach((p) => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.setAttribute('role', 'option');
+        item.innerHTML = `<strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.address || '')}</span>`;
+        item.addEventListener('click', () => {
+          map.setView([p.lat, p.lng], 17);
+          const marker = markerIndex.get(p.id);
+          if (marker) marker.openPopup();
+          input.value = '';
+          results.classList.add('hidden');
+          bar.classList.add('hidden');
+        });
+        results.appendChild(item);
+      });
+    }
+    results.classList.remove('hidden');
+  });
+
+  // Close results when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!bar.contains(e.target) && e.target !== toggle) {
+      results.classList.add('hidden');
+    }
+  });
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // ================================================================

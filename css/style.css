@@ -72,13 +72,70 @@ html, body {
   font-size: 20px;
 }
 
-#mgr-link {
+#btn-search-toggle {
+  background: none;
+  border: none;
   font-size: 20px;
-  text-decoration: none;
-  opacity: 0.5;
-  transition: opacity 0.2s;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+  opacity: 0.7;
 }
-#mgr-link:hover { opacity: 1; }
+#btn-search-toggle:hover { background: #f0f0f0; opacity: 1; }
+
+/* ---- Search bar ---- */
+#search-bar {
+  position: fixed;
+  top: var(--topbar-h);
+  left: 0; right: 0;
+  z-index: 490;
+  padding: 8px 12px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+#search-input {
+  width: 100%;
+  padding: 9px 14px;
+  font-size: 15px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  background: #f8f9fa;
+}
+#search-input:focus { border-color: var(--green-light); background: white; }
+
+#search-results {
+  position: absolute;
+  top: calc(100% - 8px);
+  left: 12px; right: 12px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.search-result-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: var(--green-pale); }
+.search-result-item strong { display: block; color: var(--text); }
+.search-result-item span { color: var(--text-muted); font-size: 12px; }
+.search-no-results {
+  padding: 14px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
 
 /* ================================================================
    FAB — Add Pantry
