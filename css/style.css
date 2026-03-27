@@ -120,6 +120,17 @@ html, body {
   z-index: 10;
 }
 
+.search-section-header {
+  padding: 6px 14px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background: #f8f9fa;
+  border-bottom: 1px solid #f0f0f0;
+}
+
 .search-result-item {
   padding: 10px 14px;
   cursor: pointer;

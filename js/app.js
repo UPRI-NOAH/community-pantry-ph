@@ -583,49 +583,76 @@ function setupSearch() {
   const input   = document.getElementById('search-input');
   const results = document.getElementById('search-results');
 
+  function closeSearch() {
+    input.value = '';
+    results.classList.add('hidden');
+    bar.classList.add('hidden');
+  }
+
   toggle.addEventListener('click', () => {
     const isHidden = bar.classList.toggle('hidden');
-    if (!isHidden) {
-      input.focus();
-    } else {
-      input.value = '';
-      results.classList.add('hidden');
-    }
+    if (!isHidden) input.focus();
+    else { input.value = ''; results.classList.add('hidden'); }
   });
 
-  input.addEventListener('input', () => {
-    const q = input.value.trim().toLowerCase();
+  input.addEventListener('input', debounce(async () => {
+    const q = input.value.trim();
     if (!q) { results.classList.add('hidden'); return; }
 
-    const matches = [];
+    results.innerHTML = '';
+    results.classList.remove('hidden');
+
+    // 1. Lat/lng coordinates (e.g. "14.5995, 120.9842")
+    const coords = parseLatLng(q);
+    if (coords) {
+      addResultItem(results, '📍 Go to coordinates', `${coords.lat}, ${coords.lng}`, () => {
+        map.setView([coords.lat, coords.lng], 16);
+        closeSearch();
+      });
+      return;
+    }
+
+    // 2. Pantry name / address (client-side)
+    const pantryMatches = [];
     pantryIndex.forEach((p) => {
-      const haystack = [p.name, p.address, p.contact_name]
-        .filter(Boolean).join(' ').toLowerCase();
-      if (haystack.includes(q)) matches.push(p);
+      const haystack = [p.name, p.address, p.contact_name].filter(Boolean).join(' ').toLowerCase();
+      if (haystack.includes(q.toLowerCase())) pantryMatches.push(p);
     });
 
-    results.innerHTML = '';
-    if (matches.length === 0) {
-      results.innerHTML = '<p class="search-no-results">No pantries found.</p>';
-    } else {
-      matches.slice(0, 8).forEach((p) => {
-        const item = document.createElement('div');
-        item.className = 'search-result-item';
-        item.setAttribute('role', 'option');
-        item.innerHTML = `<strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.address || '')}</span>`;
-        item.addEventListener('click', () => {
+    if (pantryMatches.length > 0) {
+      addSectionHeader(results, '🧺 Pantries');
+      pantryMatches.slice(0, 5).forEach((p) => {
+        addResultItem(results, p.name, p.address || '', () => {
           map.setView([p.lat, p.lng], 17);
           const marker = markerIndex.get(p.id);
           if (marker) marker.openPopup();
-          input.value = '';
-          results.classList.add('hidden');
-          bar.classList.add('hidden');
+          closeSearch();
         });
-        results.appendChild(item);
       });
     }
-    results.classList.remove('hidden');
-  });
+
+    // 3. OSM place search via Nominatim
+    try {
+      const places = await nominatim(q);
+      if (places.length > 0) {
+        addSectionHeader(results, '🗺 Places');
+        places.slice(0, 5).forEach((place) => {
+          const title    = place.display_name.split(',')[0].trim();
+          const subtitle = place.display_name.split(',').slice(1, 3).join(',').trim();
+          addResultItem(results, title, subtitle, () => {
+            map.setView([parseFloat(place.lat), parseFloat(place.lon)], 14);
+            closeSearch();
+          });
+        });
+      }
+    } catch (err) {
+      console.warn('Nominatim error:', err);
+    }
+
+    if (results.children.length === 0) {
+      results.innerHTML = '<p class="search-no-results">No results found.</p>';
+    }
+  }, 400));
 
   // Close results when clicking outside
   document.addEventListener('click', (e) => {
@@ -633,6 +660,44 @@ function setupSearch() {
       results.classList.add('hidden');
     }
   });
+}
+
+function addSectionHeader(container, label) {
+  const h = document.createElement('div');
+  h.className = 'search-section-header';
+  h.textContent = label;
+  container.appendChild(h);
+}
+
+function addResultItem(container, title, subtitle, onClick) {
+  const item = document.createElement('div');
+  item.className = 'search-result-item';
+  item.setAttribute('role', 'option');
+  item.innerHTML = `<strong>${escapeHtml(title)}</strong>${subtitle ? `<span>${escapeHtml(subtitle)}</span>` : ''}`;
+  item.addEventListener('click', onClick);
+  container.appendChild(item);
+}
+
+function parseLatLng(q) {
+  // Matches "14.5995, 120.9842" or "14.5995 120.9842"
+  const match = q.match(/^\s*(-?\d+\.?\d*)\s*[,\s]\s*(-?\d+\.?\d*)\s*$/);
+  if (!match) return null;
+  const lat = parseFloat(match[1]);
+  const lng = parseFloat(match[2]);
+  if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) return { lat, lng };
+  return null;
+}
+
+async function nominatim(q) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+function debounce(fn, delay) {
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
 }
 
 function escapeHtml(str) {
