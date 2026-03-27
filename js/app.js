@@ -325,7 +325,7 @@ function exitPickMode() {
 
 function useGPS() {
   if (!navigator.geolocation) {
-    showFormError('Geolocation is not supported by your browser.');
+    showFormError('Location is not supported by your browser. Please use "Pick on map" instead.');
     return;
   }
 
@@ -333,20 +333,39 @@ function useGPS() {
   btn.disabled = true;
   btn.textContent = '⏳ Getting location…';
 
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      setLocation(pos.coords.latitude, pos.coords.longitude);
-      map.setView([pos.coords.latitude, pos.coords.longitude], 16);
-      btn.disabled = false;
-      btn.textContent = '📍 Use GPS';
-    },
-    () => {
-      showFormError('Could not get your location. Try "Pick on map" instead.');
-      btn.disabled = false;
-      btn.textContent = '📍 Use GPS';
-    },
-    { enableHighAccuracy: true, timeout: 10000 }
-  );
+  function onSuccess(pos) {
+    setLocation(pos.coords.latitude, pos.coords.longitude);
+    map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+    btn.disabled = false;
+    btn.textContent = '📍 Use Current Location';
+  }
+
+  function onError(err) {
+    if (err.code === err.PERMISSION_DENIED) {
+      showFormError('Location access was denied. Please allow location in your browser settings, or use "Pick on map" instead.');
+    } else {
+      // High-accuracy failed (common indoors) — retry with network-based location
+      navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        () => {
+          showFormError('Could not get your location. Please use "Pick on map" instead.');
+          btn.disabled = false;
+          btn.textContent = '📍 Use Current Location';
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+      );
+      return;
+    }
+    btn.disabled = false;
+    btn.textContent = '📍 Use Current Location';
+  }
+
+  // Try GPS first, fall back to network location on failure
+  navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+    enableHighAccuracy: true,
+    timeout: 8000,
+    maximumAge: 0,
+  });
 }
 
 // ---- Set location ----
