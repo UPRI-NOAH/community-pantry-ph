@@ -184,6 +184,8 @@
     }
     .td-actions .btn-approve { color: var(--green); border-color: var(--green); }
     .td-actions .btn-approve:hover { background: var(--pale); }
+    .td-actions .btn-deny { color: var(--error); border-color: var(--error); }
+    .td-actions .btn-deny:hover { background: #fff0f1; }
 
     .td-loc a {
       color: var(--green-m);
@@ -391,9 +393,12 @@
       tbody.appendChild(tr);
     });
 
-    // Approve buttons
+    // Approve / Deny buttons
     tbody.querySelectorAll('.btn-approve').forEach((btn) => {
       btn.addEventListener('click', () => approveRow(btn.dataset.id));
+    });
+    tbody.querySelectorAll('.btn-deny').forEach((btn) => {
+      btn.addEventListener('click', () => denyRow(btn.dataset.id, btn.dataset.photo));
     });
   }
 
@@ -412,8 +417,9 @@
       : `<span class="badge badge-pending">Pending</span>`;
 
     const approveBtn = !r.approved
-      ? `<button class="btn-approve" data-id="${esc(r.id)}">Approve</button>`
+      ? `<button class="btn-approve" data-id="${esc(r.id)}">✓ Approve</button>`
       : '';
+    const denyBtn = `<button class="btn-deny" data-id="${esc(r.id)}" data-photo="${esc(r.photo_path || '')}">✕ Deny</button>`;
 
     return `
       <td class="td-photo">${photo}</td>
@@ -435,7 +441,7 @@
       </td>
       <td style="white-space:nowrap">${fmtDate(r.created_at)}</td>
       <td>${statusBadge}</td>
-      <td class="td-actions">${approveBtn}</td>
+      <td class="td-actions">${approveBtn}${denyBtn}</td>
     `;
   }
 
@@ -454,6 +460,29 @@
     // Update local state
     const row = allRows.find((r) => r.id === id);
     if (row) row.approved = true;
+    renderTable();
+  }
+
+  // ---- Deny row ----
+  async function denyRow(id, photoPath) {
+    if (!confirm('Remove this pantry submission? This cannot be undone.')) return;
+
+    // Delete photo from storage if it exists
+    if (photoPath) {
+      await supabaseClient.storage.from(CONFIG.BUCKET).remove([photoPath]);
+    }
+
+    const { error } = await supabaseClient
+      .from('pantries')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert('Could not remove: ' + error.message);
+      return;
+    }
+
+    allRows = allRows.filter((r) => r.id !== id);
     renderTable();
   }
 
