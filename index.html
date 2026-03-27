@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Find and share community pantries near you.">
+  <title>Community Pantry Map</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧺</text></svg>">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <!-- App styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ============================================================
+       MAP (full-screen background layer)
+  ============================================================ -->
+  <div id="map"></div>
+
+  <!-- ============================================================
+       TOP BAR
+  ============================================================ -->
+  <header id="topbar">
+    <div id="topbar-title">
+      <span aria-hidden="true">🧺</span>
+      <span>Community Pantry Map</span>
+    </div>
+    <a href="data.html" id="mgr-link" title="Manager dashboard">⚙️</a>
+  </header>
+
+  <!-- ============================================================
+       FAB — Add Pantry button
+  ============================================================ -->
+  <button id="btn-add" aria-label="Add a community pantry" title="Add pantry">
+    <span aria-hidden="true">+</span>
+  </button>
+
+  <!-- ============================================================
+       CROSSHAIR OVERLAY (shown when picking location on map)
+  ============================================================ -->
+  <div id="crosshair" class="hidden" aria-hidden="true">
+    <div id="crosshair-lines">
+      <div class="ch-h"></div>
+      <div class="ch-v"></div>
+    </div>
+    <div id="crosshair-hint">
+      <p>Tap anywhere on the map to place the pantry</p>
+      <button id="btn-pick-cancel" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       FORM PANEL (bottom sheet on mobile, side panel on desktop)
+  ============================================================ -->
+  <div id="panel" class="hidden" role="dialog" aria-modal="true" aria-labelledby="panel-heading">
+
+    <div id="panel-handle" aria-hidden="true"></div>
+
+    <div id="panel-inner">
+      <div id="panel-header">
+        <h2 id="panel-heading">Add a Community Pantry</h2>
+        <button id="btn-close-panel" aria-label="Close form" type="button">✕</button>
+      </div>
+
+      <form id="pantry-form" novalidate>
+
+        <!-- Location -->
+        <div class="field">
+          <label class="field-label">
+            Location <span class="required" aria-hidden="true">*</span>
+          </label>
+          <div id="location-row">
+            <p id="location-display" aria-live="polite" aria-atomic="true">No location set</p>
+            <div id="location-btns">
+              <button type="button" id="btn-pick-map" class="btn-outline btn-sm">
+                🗺 Pick on map
+              </button>
+              <button type="button" id="btn-gps" class="btn-outline btn-sm">
+                📍 Use Current Location
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Name -->
+        <div class="field">
+          <label class="field-label" for="f-name">
+            Pantry name <span class="required" aria-hidden="true">*</span>
+          </label>
+          <input id="f-name" name="name" type="text"
+                 placeholder="e.g. Binondo Community Pantry"
+                 maxlength="120" required autocomplete="off">
+        </div>
+
+        <!-- Contact person -->
+        <div class="field">
+          <label class="field-label" for="f-contact-name">Contact person</label>
+          <input id="f-contact-name" name="contact_name" type="text"
+                 placeholder="Full name" maxlength="100">
+        </div>
+
+        <!-- Contact number -->
+        <div class="field">
+          <label class="field-label" for="f-contact-phone">Contact number</label>
+          <input id="f-contact-phone" name="contact_phone" type="tel"
+                 placeholder="09XX XXX XXXX" maxlength="30">
+        </div>
+
+        <!-- URL / Facebook -->
+        <div class="field">
+          <label class="field-label" for="f-url">Website or Facebook</label>
+          <input id="f-url" name="url" type="text"
+                 placeholder="https://facebook.com/yourpage" maxlength="300">
+        </div>
+
+        <!-- Photo -->
+        <div class="field">
+          <span class="field-label">Photo</span>
+          <div id="photo-zone">
+            <label id="photo-label" for="f-photo">
+              <span aria-hidden="true">📷</span>
+              <span>Take a photo or upload</span>
+            </label>
+            <input id="f-photo" name="photo" type="file"
+                   accept="image/*" capture="environment">
+            <div id="photo-preview-wrap" class="hidden">
+              <img id="photo-preview" alt="Selected photo preview">
+              <button type="button" id="btn-clear-photo" aria-label="Remove photo">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error message -->
+        <p id="form-error" class="form-error hidden" role="alert"></p>
+
+        <!-- Actions -->
+        <div id="form-actions">
+          <button type="submit" id="btn-submit" class="btn-primary btn-full">
+            Submit Pantry
+          </button>
+          <button type="button" id="btn-cancel" class="btn-ghost btn-full">
+            Cancel
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       TOAST NOTIFICATION
+  ============================================================ -->
+  <div id="toast" role="status" aria-live="polite" class="toast hidden"></div>
+
+  <!-- ============================================================
+       SCRIPTS
+  ============================================================ -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

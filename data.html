@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager Dashboard — Community Pantry</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧺</text></svg>">
+  <style>
+    /* ---- Reset & tokens ---- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green:   #1a7a40;
+      --green-m: #2d8a4e;
+      --pale:    #d8f3dc;
+      --text:    #1a1a2e;
+      --muted:   #6c757d;
+      --border:  #dee2e6;
+      --error:   #dc3545;
+      --radius:  10px;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: #f4f6f8;
+      min-height: 100vh;
+    }
+
+    /* ---- Gate ---- */
+    #gate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    #gate-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      padding: 40px 32px;
+      text-align: center;
+      width: 100%;
+      max-width: 380px;
+    }
+    #gate-card .icon { font-size: 48px; margin-bottom: 12px; }
+    #gate-card h1 { font-size: 22px; margin-bottom: 8px; color: var(--green); }
+    #gate-card p { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    #gate-form { display: flex; flex-direction: column; gap: 10px; }
+    #gate-form input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+    }
+    #gate-form input:focus { border-color: var(--green-m); }
+    .gate-error { color: var(--error); font-size: 13px; margin-top: 4px; }
+
+    /* ---- Manager layout ---- */
+    #manager { display: flex; flex-direction: column; min-height: 100vh; }
+    #manager.hidden { display: none; }
+
+    #mgr-header {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    #mgr-header h1 { font-size: 17px; color: var(--green); }
+    #mgr-count { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    #mgr-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    /* Filter bar */
+    #filter-bar {
+      padding: 12px 24px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    #filter-bar label { font-size: 13px; color: var(--muted); font-weight: 500; }
+    #filter-bar select, #filter-bar input {
+      padding: 6px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+    #filter-bar select:focus, #filter-bar input:focus { border-color: var(--green-m); }
+
+    /* ---- Table ---- */
+    #table-wrap {
+      flex: 1;
+      overflow-x: auto;
+      padding: 16px 24px;
+    }
+    #data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      font-size: 13px;
+    }
+    #data-table th {
+      background: #f8f9fa;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    #data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: top;
+      color: var(--text);
+    }
+    #data-table tr:last-child td { border-bottom: none; }
+    #data-table tr:hover td { background: #fafffe; }
+
+    .td-photo img {
+      width: 56px; height: 56px;
+      object-fit: cover;
+      border-radius: 6px;
+      display: block;
+    }
+    .td-photo .no-photo {
+      width: 56px; height: 56px;
+      background: #f0f0f0;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+
+    .td-name { font-weight: 600; max-width: 180px; }
+    .td-name small { font-weight: 400; color: var(--muted); display: block; margin-top: 2px; }
+
+    .td-url a {
+      color: var(--green-m);
+      text-decoration: none;
+      word-break: break-all;
+      font-size: 12px;
+    }
+    .td-url a:hover { text-decoration: underline; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-pending  { background: #fff3cd; color: #856404; }
+    .badge-approved { background: var(--pale); color: var(--green); }
+
+    .td-actions { white-space: nowrap; }
+    .td-actions button {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-right: 4px;
+    }
+    .td-actions .btn-approve { color: var(--green); border-color: var(--green); }
+    .td-actions .btn-approve:hover { background: var(--pale); }
+
+    .td-loc a {
+      color: var(--green-m);
+      text-decoration: none;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+    .td-loc a:hover { text-decoration: underline; }
+
+    #empty-state {
+      text-align: center;
+      padding: 60px 24px;
+      color: var(--muted);
+    }
+
+    /* ---- Buttons ---- */
+    .btn-primary {
+      background: var(--green-m);
+      color: white; border: none;
+      border-radius: 7px; padding: 8px 16px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--green); }
+    .btn-outline {
+      background: white; color: var(--green-m);
+      border: 1.5px solid var(--green-m);
+      border-radius: 7px; padding: 7px 14px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .btn-outline:hover { background: var(--pale); }
+    .btn-text {
+      background: none; border: none;
+      color: var(--muted); font-size: 13px;
+      cursor: pointer; padding: 7px 10px;
+      border-radius: 6px; text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-text:hover { background: #f0f0f0; color: var(--text); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       PASSWORD GATE
+  ============================================================ -->
+  <div id="gate">
+    <div id="gate-card">
+      <div class="icon">🧺</div>
+      <h1>Manager Access</h1>
+      <p>Enter the manager password to view and manage pantry submissions.</p>
+      <form id="gate-form" autocomplete="off">
+        <input type="password" id="mgr-password" placeholder="Password"
+               autocomplete="current-password" required>
+        <button type="submit" class="btn-primary">Unlock</button>
+      </form>
+      <p id="gate-error" class="gate-error hidden">Incorrect password. Please try again.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MANAGER VIEW
+  ============================================================ -->
+  <div id="manager" class="hidden">
+
+    <header id="mgr-header">
+      <div>
+        <h1>Community Pantry — Submissions</h1>
+        <p id="mgr-count">Loading…</p>
+      </div>
+      <div id="mgr-actions">
+        <button id="btn-refresh" class="btn-outline">↻ Refresh</button>
+        <button id="btn-export" class="btn-primary">↓ Export CSV</button>
+        <a href="index.html" class="btn-text">← View Map</a>
+      </div>
+    </header>
+
+    <div id="filter-bar">
+      <label>Status:
+        <select id="filter-status">
+          <option value="all">All</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+        </select>
+      </label>
+      <label>Search:
+        <input type="text" id="filter-search" placeholder="Name or contact…" style="width:180px">
+      </label>
+    </div>
+
+    <div id="table-wrap">
+      <table id="data-table">
+        <thead>
+          <tr>
+            <th>Photo</th>
+            <th>Name</th>
+            <th>Location</th>
+            <th>Contact</th>
+            <th>Number</th>
+            <th>URL</th>
+            <th>Submitted</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="data-body"></tbody>
+      </table>
+      <p id="empty-state" class="hidden">No submissions found.</p>
+    </div>
+
+  </div>
+
+  <!-- ============================================================
+       SCRIPTS
+  ============================================================ -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script>
+  'use strict';
+
+  let supabaseClient;
+  let allRows = [];
+
+  // ---- Password gate ----
+  document.getElementById('gate-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pw = document.getElementById('mgr-password').value;
+    if (pw === CONFIG.MANAGER_PASSWORD) {
+      document.getElementById('gate').classList.add('hidden');
+      document.getElementById('manager').classList.remove('hidden');
+      initManager();
+    } else {
+      document.getElementById('gate-error').classList.remove('hidden');
+    }
+  });
+
+  // ---- Init manager ----
+  function initManager() {
+    const { createClient } = window.supabase;
+    supabaseClient = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    loadData();
+
+    document.getElementById('btn-refresh').addEventListener('click', loadData);
+    document.getElementById('btn-export').addEventListener('click', exportCSV);
+    document.getElementById('filter-status').addEventListener('change', renderTable);
+    document.getElementById('filter-search').addEventListener('input', renderTable);
+  }
+
+  // ---- Load data ----
+  async function loadData() {
+    document.getElementById('mgr-count').textContent = 'Loading…';
+    document.getElementById('data-body').innerHTML = '';
+    document.getElementById('empty-state').classList.add('hidden');
+
+    // Note: anon key can only see approved=true rows per RLS.
+    // To see ALL submissions including unapproved, use the Supabase dashboard
+    // or configure a separate authenticated manager account.
+    const { data, error } = await supabaseClient
+      .from('pantries')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      document.getElementById('mgr-count').textContent = 'Failed to load data.';
+      console.error(error);
+      return;
+    }
+
+    allRows = data || [];
+    document.getElementById('mgr-count').textContent =
+      `${allRows.length} submission${allRows.length !== 1 ? 's' : ''} (approved only — use Supabase dashboard to see pending)`;
+    renderTable();
+  }
+
+  // ---- Render table ----
+  function renderTable() {
+    const statusFilter = document.getElementById('filter-status').value;
+    const searchTerm   = document.getElementById('filter-search').value.toLowerCase().trim();
+
+    let rows = allRows.filter((r) => {
+      if (statusFilter === 'approved' && !r.approved) return false;
+      if (statusFilter === 'pending'  &&  r.approved) return false;
+      if (searchTerm) {
+        const haystack = [r.name, r.contact_name, r.contact_phone, r.url]
+          .filter(Boolean).join(' ').toLowerCase();
+        if (!haystack.includes(searchTerm)) return false;
+      }
+      return true;
+    });
+
+    const tbody = document.getElementById('data-body');
+    tbody.innerHTML = '';
+
+    if (rows.length === 0) {
+      document.getElementById('empty-state').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('empty-state').classList.add('hidden');
+
+    rows.forEach((r) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = buildRow(r);
+      tbody.appendChild(tr);
+    });
+
+    // Approve buttons
+    tbody.querySelectorAll('.btn-approve').forEach((btn) => {
+      btn.addEventListener('click', () => approveRow(btn.dataset.id));
+    });
+  }
+
+  function buildRow(r) {
+    const photo = r.photo_url
+      ? `<img src="${esc(r.photo_url)}" loading="lazy" alt="${esc(r.name)}">`
+      : `<div class="no-photo">🧺</div>`;
+
+    const locUrl = `https://www.openstreetmap.org/?mlat=${r.lat}&mlon=${r.lng}&zoom=16`;
+    const safeUrl = r.url
+      ? (/^https?:\/\//i.test(r.url) ? r.url : 'https://' + r.url)
+      : null;
+
+    const statusBadge = r.approved
+      ? `<span class="badge badge-approved">Approved</span>`
+      : `<span class="badge badge-pending">Pending</span>`;
+
+    const approveBtn = !r.approved
+      ? `<button class="btn-approve" data-id="${esc(r.id)}">Approve</button>`
+      : '';
+
+    return `
+      <td class="td-photo">${photo}</td>
+      <td class="td-name">
+        ${esc(r.name)}
+        <small>${esc(r.id.slice(0, 8))}…</small>
+      </td>
+      <td class="td-loc">
+        <a href="${esc(locUrl)}" target="_blank" rel="noopener">
+          ${r.lat.toFixed(5)},<br>${r.lng.toFixed(5)}
+        </a>
+      </td>
+      <td>${esc(r.contact_name || '—')}</td>
+      <td>${esc(r.contact_phone || '—')}</td>
+      <td class="td-url">
+        ${safeUrl
+          ? `<a href="${esc(safeUrl)}" target="_blank" rel="noopener">${esc(r.url)}</a>`
+          : '—'}
+      </td>
+      <td style="white-space:nowrap">${fmtDate(r.created_at)}</td>
+      <td>${statusBadge}</td>
+      <td class="td-actions">${approveBtn}</td>
+    `;
+  }
+
+  // ---- Approve row ----
+  async function approveRow(id) {
+    const { error } = await supabaseClient
+      .from('pantries')
+      .update({ approved: true })
+      .eq('id', id);
+
+    if (error) {
+      alert('Could not approve: ' + error.message);
+      return;
+    }
+
+    // Update local state
+    const row = allRows.find((r) => r.id === id);
+    if (row) row.approved = true;
+    renderTable();
+  }
+
+  // ---- Export CSV ----
+  function exportCSV() {
+    const cols = ['id', 'name', 'lat', 'lng', 'contact_name', 'contact_phone', 'url', 'photo_url', 'created_at', 'approved'];
+    const lines = [
+      cols.join(','),
+      ...allRows.map((r) =>
+        cols.map((c) => JSON.stringify(r[c] !== null && r[c] !== undefined ? String(r[c]) : '')).join(',')
+      ),
+    ];
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `pantries-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ---- Helpers ----
+  function esc(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function fmtDate(str) {
+    return new Date(str).toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  }
+  </script>
+
+</body>
+</html>
