@@ -495,9 +495,7 @@ async function handleSubmit(e) {
     // 3. Success
     closePanel();
     showToast(
-      CONFIG.AUTO_APPROVE
-        ? '🎉 Pantry added to the map!'
-        : '✅ Submitted! It will appear after review.',
+      '🎉 Pantry added to the map!',
       'success'
     );
 
