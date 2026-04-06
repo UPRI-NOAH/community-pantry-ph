@@ -640,7 +640,17 @@ function setupSearch() {
           const title    = place.display_name.split(',')[0].trim();
           const subtitle = place.display_name.split(',').slice(1, 3).join(',').trim();
           addResultItem(results, title, subtitle, () => {
-            map.setView([parseFloat(place.lat), parseFloat(place.lon)], 14);
+            const latlng = [parseFloat(place.lat), parseFloat(place.lon)];
+            map.setView(latlng, 14);
+            const pin = L.marker(latlng, {
+              icon: L.divIcon({
+                className: '',
+                html: '<div style="width:18px;height:18px;border-radius:50%;background:#e53e3e;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4)"></div>',
+                iconSize: [18, 18],
+                iconAnchor: [9, 9],
+              }),
+            }).addTo(map);
+            setTimeout(() => map.removeLayer(pin), 4000);
             closeSearch();
           });
         });
